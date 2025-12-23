@@ -1,32 +1,32 @@
-import React from 'react';
-import './Header.css';
+import React from "react";
+import "./Header.css";
 
-const Header = ({ 
-  searchQuery, 
-  onSearchChange, 
-  onSearch, 
+const Header = ({
+  searchQuery,
+  onSearchChange,
+  onSearch,
   onExampleClick,
   onTitleClick,
-  showBackButton
+  showBackButton,
 }) => {
-  const exampleSearches = ['Pikachu', 'Charizard', 'Bulbasaur', 'Mew'];
+  const exampleSearches = ["Pikachu", "Charizard", "Bulbasaur", "Mew"];
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       onSearch();
     }
   };
 
   return (
     <header className="header">
-      <h1 
-        className="header__title" 
+      <img
+        src="/pokedex_logo.png"
+        alt="Pokédex"
+        className="header_logo"
         onClick={onTitleClick}
-        style={{ cursor: 'pointer' }}
-      >
-        Pokédex
-      </h1>
-      
+        style={{ cursor: "pointer" }}
+      />
+
       <div className="header__search">
         <input
           type="text"
@@ -36,16 +36,13 @@ const Header = ({
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={handleKeyPress}
         />
-        <button 
-          className="header__search-button" 
-          onClick={onSearch}
-        >
+        <button className="header__search-button" onClick={onSearch}>
           Search
         </button>
       </div>
 
       <div className="header__examples">
-        {exampleSearches.map(name => (
+        {exampleSearches.map((name) => (
           <button
             key={name}
             className="header__example-button"
