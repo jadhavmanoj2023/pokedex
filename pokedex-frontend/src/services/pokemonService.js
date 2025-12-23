@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:8080/api/v1/pokemon';
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL;
+
 
 export const pokemonService = {
   async getPokemonList(offset = 0, limit = 20) {
