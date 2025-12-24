@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import Header from './components/Header/Header';
-import PokemonDetail from './components/PokemonDetail/PokemonDetail';
-import { pokemonService } from './services/pokemonService';
-import './App.css';
-import PokemonGrid from './components/PokemonGrid/PokemonGrid';
+import React, { useState, useEffect } from "react";
+import { ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+import Header from "./components/Header/Header";
+import PokemonDetail from "./components/PokemonDetail/PokemonDetail";
+import { pokemonService } from "./services/pokemonService";
+import "./App.css";
+import PokemonGrid from "./components/PokemonGrid/PokemonGrid";
 
 function App() {
   const [pokemonList, setPokemonList] = useState([]);
   const [selectedPokemon, setSelectedPokemon] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     offset: 0,
     limit: 20,
-    hasMore: true
+    hasMore: true,
   });
 
   useEffect(() => {
@@ -24,38 +28,53 @@ function App() {
   const fetchPokemonList = async (offset, limit) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await pokemonService.getPokemonList(offset, limit);
-      
-      if (offset === 0) {
-        setPokemonList(data.data);
-      } else {
-        setPokemonList(prev => [...prev, ...data.data]);
-      }
-      
+
+      setPokemonList((prev) =>
+        offset === 0 ? data.data : [...prev, ...data.data]
+      );
+
       setPagination({
         offset: data.offset,
         limit: data.limit,
-        hasMore: data.hasMore
+        hasMore: data.hasMore,
       });
     } catch (err) {
-      setError(err.message);
+      toast.error("Failed to load Pokémon list");
+      setError("Failed to load Pokémon list");
     } finally {
       setLoading(false);
     }
   };
 
   const fetchPokemonDetails = async (nameOrId) => {
+    if (!nameOrId || !nameOrId.trim()) {
+      toast.warning("Please enter a Pokémon name or ID");
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await pokemonService.getPokemonDetails(nameOrId);
       setSelectedPokemon(data);
     } catch (err) {
-      setError(err.message);
-      alert('Pokémon not found. Please try another name or ID.');
+      setSelectedPokemon(null);
+
+      if (err.status === 404) {
+        toast.error(err.message); // "Pokemon not found: hh"
+      } else if (err.status === 400) {
+        toast.warning(err.message);
+      } else if (err.status === 503) {
+        toast.error("PokéAPI service is unavailable. Try again later.");
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
+
+      setError(err.message); // optional (for inline error UI)
     } finally {
       setLoading(false);
     }
@@ -64,12 +83,11 @@ function App() {
   const handleSearch = () => {
     if (searchQuery.trim()) {
       fetchPokemonDetails(searchQuery.trim());
-      // Removed setSearchQuery('') to keep the text in search bar
     }
   };
 
   const handleExampleClick = (name) => {
-    setSearchQuery(name); // Update search bar with the example name
+    setSearchQuery(name);
     fetchPokemonDetails(name);
   };
 
@@ -84,11 +102,22 @@ function App() {
 
   const handleBackToHome = () => {
     setSelectedPokemon(null);
-    setSearchQuery(''); // Clear search when going back to grid
+    setSearchQuery("");
   };
 
   return (
     <div className="app">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        limit={3}
+      />
+
       <Header
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -98,17 +127,8 @@ function App() {
         showBackButton={!!selectedPokemon}
       />
 
-      {error && (
-        <div className="app__error">
-          {error}
-        </div>
-      )}
-
       {selectedPokemon ? (
-        <PokemonDetail
-          pokemon={selectedPokemon}
-          onBack={handleBackToHome}
-        />
+        <PokemonDetail pokemon={selectedPokemon} onBack={handleBackToHome} />
       ) : (
         <PokemonGrid
           pokemonList={pokemonList}
