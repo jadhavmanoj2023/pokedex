@@ -11,3 +11,4 @@ pokedex-frontend/dist/
 .idea/
 .vscode/
 *.log
+.env
