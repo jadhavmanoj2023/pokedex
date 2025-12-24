@@ -132,3 +132,11 @@ This project showcases:
 * Performance optimization using caching
 * Clean code and clear documentation
 
+## 📸 Screenshots
+
+### Home Page
+![Pokédex Home](/screenshots/homepage.png)
+
+### Pokémon Details
+![Pokémon Detail View1](/screenshots/pokemondetail1.png)
+![Pokémon Detail View2](/screenshots/pokemondetail2.png)
