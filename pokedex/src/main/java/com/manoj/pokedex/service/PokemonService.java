@@ -4,43 +4,62 @@ import com.manoj.pokedex.client.PokeApiClient;
 import com.manoj.pokedex.dto.PokemonListDto;
 import com.manoj.pokedex.dto.PokemonPageResponseDto;
 import com.manoj.pokedex.dto.PokemonResponseDto;
+import com.manoj.pokedex.util.PokemonValidator;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class PokemonService {
-    @Autowired
-    private PokeApiClient pokeApiClient;
 
-    @Cacheable(value = "pokemon", key = "#name.toLowerCase()")
-    public PokemonResponseDto getPokemonByName(String name) {
-        log.info("Calling PokeAPI for pokemon: {}", name);
+    private final PokeApiClient pokeApiClient;
 
-        Map<String, Object> pokemonData = pokeApiClient.fetchPokemon(name);
-        Map<String, Object> speciesData = pokeApiClient.fetchPokemonSpecies(name);
+    public PokemonService(PokeApiClient pokeApiClient) {
+        this.pokeApiClient = pokeApiClient;
+    }
+
+
+     // Fetch single pokemon by name or id
+    @Cacheable(value = "pokemon", key = "#nameOrId.toLowerCase()")
+    public PokemonResponseDto getPokemonByName(String nameOrId) {
+
+        // Validate & normalize name or id
+        String identifier = PokemonValidator.validateAndNormalizeName(nameOrId);
+
+        log.debug("Fetching pokemon from PokeAPI: {}", identifier);
+
+        Map<String, Object> pokemonData =
+                pokeApiClient.fetchPokemon(identifier);
+
+        Map<String, Object> speciesData =
+                pokeApiClient.fetchPokemonSpecies(identifier);
 
         String description = extractEnglishDescription(speciesData);
 
         return PokemonResponseDto.from(pokemonData, description);
     }
 
+    // Safely extract English description
     private String extractEnglishDescription(Map<String, Object> speciesData) {
 
-        List<Map<String, Object>> flavorTexts =
-                (List<Map<String, Object>>) speciesData.get("flavor_text_entries");
+        Object entries = speciesData.get("flavor_text_entries");
 
-        return flavorTexts.stream()
-                .filter(entry ->
-                        ((Map<String, String>) entry.get("language"))
-                                .get("name").equals("en")
-                )
+        if (!(entries instanceof List<?> list)) {
+            return "No description available.";
+        }
+
+        return list.stream()
+                .filter(item -> item instanceof Map)
+                .map(item -> (Map<String, Object>) item)
+                .filter(entry -> {
+                    Object lang = entry.get("language");
+                    return lang instanceof Map &&
+                            "en".equals(((Map<?, ?>) lang).get("name"));
+                })
                 .map(entry ->
                         ((String) entry.get("flavor_text"))
                                 .replace("\n", " ")
@@ -50,6 +69,7 @@ public class PokemonService {
                 .orElse("No description available.");
     }
 
+    // Paginated pokemon list
     @Cacheable(
             value = "pokemonList",
             key = "'offset:' + #offset + '-limit:' + #limit"
@@ -77,7 +97,6 @@ public class PokemonService {
                     "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"
                             + id + ".png";
 
-
             return new PokemonListDto(id, name, image, List.of());
         }).toList();
 
@@ -101,9 +120,4 @@ public class PokemonService {
                 pokemons
         );
     }
-
-
-
-
-
 }
