@@ -1,10 +1,3 @@
-Great work on both the backend **and** the frontend — this is already at a level interviewers like to see 👍
-Below is a **clean, professional Frontend Documentation** that matches the quality and depth of your backend doc and aligns perfectly with the task requirements.
-
-You can directly place this in your frontend `README.md` or as `FRONTEND.md` in the repo.
-
----
-
 # Pokédex Frontend
 
 ## Overview
